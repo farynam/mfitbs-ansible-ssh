@@ -1,0 +1,26 @@
+---
+# tasks file for mfitbs-ansible-ssh
+- name: Create remote user .ssh dir
+  file:
+    path: "{{ ansible_user }}/.ssh/"
+    state: directory
+    mode: '0700'
+
+- name: ensure public key is present on a server
+  authorized_key:
+    user: "{{ ansible_user }}"
+    key: "{{ lookup('file', ssh_keys_dir ~ '/' ~ item) }}"
+    state: present
+  with_items: "{{ pub_keys }}"
+
+- name: Prohibit root password login
+  replace:
+    path: /etc/ssh/sshd_config
+    regexp: 'PermitRootLogin\s+yes'
+    replace: 'PermitRootLogin prohibit-password'
+
+- name: Allow public key auth
+  replace:
+    path: /etc/ssh/sshd_config
+    regexp: '(#+)(PubkeyAuthentication.*)'
+    replace: '\2'
